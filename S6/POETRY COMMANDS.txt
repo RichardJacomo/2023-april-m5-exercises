@@ -1,0 +1,8 @@
+1 - Instala o Curl, instala o poetry, cria a variável de ambiente
+2 - poetry initi(inicia o arquivo)
+3 - poetry add <nome-da-lib> (instala libs e dependências)
+4 - poetry install (instala todas as dependências caso não haja o arquivo poetry.lock)
+5 - poetry shell (entra no ambiente virtual)
+6 - exit (sai do modo virtual)
+
+

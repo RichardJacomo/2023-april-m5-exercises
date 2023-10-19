@@ -1,0 +1,30 @@
+    def patch(self, request: Request, pet_id):
+        try:
+            pet = Pet.objects.get(pk=pet_id)
+        except Pet.DoesNotExist:
+            return Response({"detail": "Not found"}, 404) 
+
+        # Serialize os dados de atualização
+        serializer = PetSerializer(pet, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+
+        # Atualize o objeto pet com os dados fornecidos
+        pet.name = serializer.validated_data.get('name', pet.name)
+        pet.age = serializer.validated_data.get('age', pet.age)
+        # adicione ou atualize informações de grupo
+        group_get = serializer.validated_data.get('group')
+        if group_get:
+            group_filtered, created = Group.objects.get_or_create(scientific_name__iexact=group_get["scientific_name"], defaults=group_get)
+            pet.group = group_filtered
+        # adicione ou atualize informações de traços
+        trait_get = serializer.validated_data.get('traits')
+        if trait_get:
+            trait_filtered = [Trait.objects.get_or_create(name__iexact=trait["name"], defaults=trait)[0] for trait in trait_get]
+            pet.traits.set(trait_filtered)
+
+        # Salve as alterações no banco de dados
+        pet.save()
+
+        # Serialize o objeto pet atualizado e retorne como resposta
+        serializer = PetSerializer(pet)
+        return Response(serializer.data, status=status.HTTP_200_OK)

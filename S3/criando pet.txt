@@ -1,0 +1,24 @@
+class PetView(APIView, PageNumberPagination):           
+    def post(self, request: Request):
+        serializer = PetSerializer(data=request.data)  # serializa o body da requisição
+        serializer.is_valid(raise_exception=True)  # verifica se os dados são válidos
+
+        group_get = serializer.validated_data.pop("group")  # remove o campo "group" de serializer.validated_data e retorna para group_get
+        trait_get = serializer.validated_data.pop("traits")  # remove o campo "trait" de serializer.validated_data e retorna para trait_get
+
+        # obtém um grupo existente com base no "scientific_name" fornecido ou cria um novo grupo caso ele não exista através do defaults repassando um dict
+        group_filtered, created = Group.objects.get_or_create(scientific_name__icontains=group_get["scientific_name"], defaults=group_get)
+
+        # cria um novo Pet com base nos dados validados e no grupo filtrado
+        pet_add = Pet.objects.create(group=group_filtered, **serializer.validated_data)
+
+        # obtém uma lista de instâncias de Trait existentes com base nos nomes fornecidos ou cria novas instâncias
+        trait_filtered = [Trait.objects.get_or_create(name__icontains=trait["name"], defaults=trait)[0] for trait in trait_get]
+
+        # adiciona as instâncias de Trait filtradas ao Pet criado
+        pet_add.traits.add(*trait_filtered)
+
+        # serializa o Pet criado e retorna a resposta
+        serializer = PetSerializer(pet_add)
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
